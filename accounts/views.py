@@ -6,6 +6,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_str, smart_bytes
 from django.core.mail import send_mail
 from django.urls import reverse
+from django.conf import settings
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,6 +24,7 @@ from django.contrib.auth import get_user_model
 from .serializers import UserListSerializer, UserDetailSerializer, UpdateOwnProfileSerializer
 from .permissions import IsOwnerOrAdmin
 from .utils import can_view_profile
+from .models import Profile
 
 User = get_user_model()
 
@@ -34,22 +36,33 @@ class RegisterView(generics.CreateAPIView):
         user = serializer.save()
         uid = urlsafe_base64_encode(smart_bytes(user.pk))
         token = email_verification_token.make_token(user)
-        verify_url = self.request.build_absolute_uri(reverse('accounts:verify-email'))
+        
+        # Use frontend URL instead of backend API
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        verify_url = f"{frontend_url}/verify-email?uid={uid}&token={token}"
 
         message = f"""
-        Hi {user.username},
+Hi {user.username},
 
-        Please verify your email by POSTing to:
-        {verify_url}
+Welcome to SocialConnect! Please verify your email address by clicking the link below:
 
-        With JSON:
-        {{
-            "uid": "{uid}",
-            "token": "{token}"
-        }}
+{verify_url}
+
+If the link doesn't work, you can copy and paste it into your browser.
+
+This link will expire in 24 hours.
+
+Best regards,
+SocialConnect Team
         """
 
-        send_mail('Verify your SocialConnect email', message, None, [user.email])
+        send_mail(
+            'Verify your SocialConnect email',
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False
+        )
 
 class VerifyEmailView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -70,7 +83,7 @@ class VerifyEmailView(APIView):
             user.is_active = True
             user.is_email_verified = True
             user.save()
-            return Response({'detail': 'Email verified'})
+            return Response({'detail': 'Email verified successfully'})
         return Response({'detail': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
@@ -120,22 +133,38 @@ class PasswordResetView(APIView):
         if user:
             uid = urlsafe_base64_encode(smart_bytes(user.pk))
             token = PasswordResetTokenGenerator().make_token(user)
-            reset_url = self.request.build_absolute_uri(reverse('accounts:password-reset-confirm'))
+            
+            # Use frontend URL for password reset
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+            reset_url = f"{frontend_url}/reset-password?uid={uid}&token={token}"
+            
             message = f"""
-            Hi {user.username},
+Hi {user.username},
 
-            To reset your password, POST to:
-            {reset_url}
+You requested to reset your password for your SocialConnect account. Click the link below to reset your password:
 
-            With JSON:
-            {{
-                "uid": "{uid}",
-                "token": "{token}",
-                "new_password": "your_new_password"
-            }}
+{reset_url}
+
+If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+
+This link will expire in 1 hour.
+
+Best regards,
+SocialConnect Team
             """
-            send_mail('Password Reset', message, None, [user.email])
-        return Response({'detail': 'If the email exists, reset instructions sent'})
+            
+            send_mail(
+                'Password Reset Request - SocialConnect',
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False
+            )
+        
+        # Always return success message for security
+        return Response({'detail': 'If the email exists, reset instructions have been sent'})
+    
+
 
 class PasswordResetConfirmView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -154,11 +183,13 @@ class PasswordResetConfirmView(APIView):
             return Response({'detail': 'Invalid UID'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not PasswordResetTokenGenerator().check_token(user, token):
-            return Response({'detail': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save()
         return Response({'detail': 'Password reset successful'})
+    
+
 
 class ChangePasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -181,7 +212,7 @@ class ChangePasswordView(APIView):
 
 class UserListView(generics.ListAPIView):
     """
-    GET /api/users/?q=search_term
+    GET /api/auth/users/?q=search_term
     Admins see all users. Regular users see public users + followers-only if they follow them.
     """
     serializer_class = UserListSerializer
@@ -204,7 +235,7 @@ class UserListView(generics.ListAPIView):
 
 class UserDetailView(generics.RetrieveAPIView):
     """
-    GET /api/users/<id>/
+    GET /api/auth/users/<id>/
     Respects profile.visibility
     """
     serializer_class = UserDetailSerializer
@@ -221,7 +252,7 @@ class UserDetailView(generics.RetrieveAPIView):
 
 class MeProfileView(generics.RetrieveUpdateAPIView):
     """
-    GET/PUT/PATCH /api/users/me/
+    GET/PUT/PATCH /api/auth/users/me/
     """
     serializer_class = UpdateOwnProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -231,3 +262,32 @@ class MeProfileView(generics.RetrieveUpdateAPIView):
 
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return UserDetailSerializer
+        return UpdateOwnProfileSerializer
+
+
+# Add follow/unfollow functionality
+class FollowUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, id):
+        try:
+            user_to_follow = User.objects.get(id=id)
+            if user_to_follow == request.user:
+                return Response({'detail': 'Cannot follow yourself'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user_to_follow.followers.add(request.user)
+            return Response({'detail': f'Now following {user_to_follow.username}'})
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    def delete(self, request, id):
+        try:
+            user_to_unfollow = User.objects.get(id=id)
+            user_to_unfollow.followers.remove(request.user)
+            return Response({'detail': f'Unfollowed {user_to_unfollow.username}'})
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)

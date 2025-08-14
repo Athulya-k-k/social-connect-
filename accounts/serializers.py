@@ -7,9 +7,15 @@ from django.utils.encoding import smart_bytes
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Profile
 from posts.models import Post  # assume posts app has Post model
-User = get_user_model()
+
+
+try:
+    from posts.models import Post  # assume posts app has Post model
+except ImportError:
+    Post = None
 
 User = get_user_model()
+
 
 # Generate JWT tokens for user
 def get_tokens_for_user(user):
@@ -120,12 +126,24 @@ class UserListSerializer(serializers.ModelSerializer):
 
     def get_posts_count(self, obj):
         # posts app: Post model with ForeignKey author
-        return Post.objects.filter(author=obj).count()
+        if Post:
+            return Post.objects.filter(author=obj).count()
+        return 0
 
 class UserDetailSerializer(UserListSerializer):
-    email = serializers.EmailField(source='email', read_only=True)  # only returned, not editable
+    email = serializers.EmailField(read_only=True)
+    is_email_verified = serializers.BooleanField(read_only=True)
+    following = serializers.SerializerMethodField()
+    
     class Meta(UserListSerializer.Meta):
-        fields = UserListSerializer.Meta.fields + ('email',)
+        fields = UserListSerializer.Meta.fields + ('email', 'is_email_verified', 'following')
+    
+    def get_following(self, obj):
+        # Only include following list if this is the current user's profile
+        request = self.context.get('request')
+        if request and request.user == obj:
+            return UserListSerializer(obj.following.all(), many=True, context=self.context).data
+        return None
 
 class UpdateOwnProfileSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer()
@@ -147,3 +165,6 @@ class UpdateOwnProfileSerializer(serializers.ModelSerializer):
             setattr(profile, attr, value)
         profile.save()
         return instance
+    
+
+
