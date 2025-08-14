@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     'posts',
-    'notifications',
     'accounts.apps.AccountsConfig',
     'social',
 ]
