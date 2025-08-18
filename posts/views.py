@@ -4,6 +4,20 @@ from .models import Post
 from .serializers import PostListSerializer, PostCreateSerializer, PostUpdateSerializer
 from .permissions import IsOwnerOrReadOnly
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.generics import CreateAPIView
+
+import logging
+logger = logging.getLogger(__name__)
+
+class PostCreateView(CreateAPIView):
+    def create(self, request, *args, **kwargs):
+        logger.info(f"Auth header: {request.headers.get('Authorization')}")
+        logger.info(f"User: {request.user}")
+        logger.info(f"Data: {request.data}")
+        return super().create(request, *args, **kwargs)
+
+
+
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10

@@ -25,6 +25,8 @@ from .serializers import UserListSerializer, UserDetailSerializer, UpdateOwnProf
 from .permissions import IsOwnerOrAdmin
 from .utils import can_view_profile
 from .models import Profile
+from django.db.models import Q
+
 
 User = get_user_model()
 
@@ -210,11 +212,8 @@ class ChangePasswordView(APIView):
 
 
 
+# accounts/views.py - Update UserListView
 class UserListView(generics.ListAPIView):
-    """
-    GET /api/auth/users/?q=search_term
-    Admins see all users. Regular users see public users + followers-only if they follow them.
-    """
     serializer_class = UserListSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
@@ -223,14 +222,29 @@ class UserListView(generics.ListAPIView):
     def get_queryset(self):
         q = self.request.query_params.get('q')
         qs = User.objects.all().select_related('profile')
-        # If not admin, filter by visibility
-        user = self.request.user if self.request.user.is_authenticated else None
-        if not user or not user.is_staff:
-            # show public users
+
+        # For non-authenticated users → only public profiles
+        if not self.request.user.is_authenticated:
             qs = qs.filter(profile__visibility=Profile.VISIBILITY_PUBLIC)
-            # optionally support search: if q present broaden
-            if q:
-                qs = User.objects.filter(username__icontains=q)  # search across usernames, later refine
+
+        # For regular authenticated users → public + followed + own profile
+        elif not self.request.user.is_staff:
+            following_ids = self.request.user.following.values_list('id', flat=True)
+            qs = qs.filter(
+                Q(profile__visibility=Profile.VISIBILITY_PUBLIC) |
+                Q(profile__visibility=Profile.VISIBILITY_FOLLOWERS, id__in=following_ids) |
+                Q(id=self.request.user.id)
+            )
+
+        # Apply search query if present
+        if q:
+            qs = qs.filter(
+                Q(username__icontains=q) |
+                Q(first_name__icontains=q) |
+                Q(last_name__icontains=q) |
+                Q(email__icontains=q)
+            )
+
         return qs.order_by('-date_joined')
 
 class UserDetailView(generics.RetrieveAPIView):

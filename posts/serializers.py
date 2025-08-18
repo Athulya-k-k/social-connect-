@@ -47,19 +47,26 @@ class PostCreateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        request = self.context.get('request')
-        user = request.user
-        image_file = validated_data.pop('image_file', None)
-        # create post first without image
-        post = Post.objects.create(author=user, **validated_data)
-        # if image exists, upload and set image_url
-        if image_file:
-            ext = 'jpg' if image_file.content_type == 'image/jpeg' else 'png'
-            dest_path = f'posts/{user.id}/post_{post.id}_{uuid.uuid4().hex}.{ext}'
-            public_url = upload_image_to_supabase(image_file, dest_path)
-            post.image_url = public_url
-            post.save()
-        return post
+     request = self.context.get('request')
+     user = request.user
+
+    # ensure 'author' is not in validated_data
+     validated_data.pop('author', None)
+
+     image_file = validated_data.pop('image_file', None)
+
+    # create post first without image
+     post = Post.objects.create(author=user, **validated_data)
+
+    # if image exists, upload and set image_url
+     if image_file:
+        ext = 'jpg' if image_file.content_type == 'image/jpeg' else 'png'
+        dest_path = f'posts/{user.id}/post_{post.id}_{uuid.uuid4().hex}.{ext}'
+        public_url = upload_image_to_supabase(image_file, dest_path)
+        post.image_url = public_url
+        post.save()
+
+     return post
 
 class PostUpdateSerializer(serializers.ModelSerializer):
     image_file = serializers.ImageField(write_only=True, required=False, allow_null=True)

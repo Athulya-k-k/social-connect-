@@ -13,11 +13,16 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+
 from dotenv import load_dotenv
 from decouple import config
-DEBUG = config('DEBUG', default=False, cast=bool)
-
 load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+DEBUG = config('DEBUG', default=False, cast=bool)
+print("DEBUG SUPABASE_URL =", os.getenv("SUPABASE_URL"))
+print("DEBUG SUPABASE_KEY =", os.getenv("SUPABASE_KEY")[:10], "...")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -196,8 +201,9 @@ FRONTEND_URL = 'http://localhost:3000'
 
 DEFAULT_FROM_EMAIL = 'SocialConnect <noreply@socialconnect.com>'
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
 
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Your frontend URL
+]
+CORS_ALLOW_CREDENTIALS = True
