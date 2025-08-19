@@ -12,7 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-import os
+import os 
+import logging
 
 from dotenv import load_dotenv
 from decouple import config
@@ -207,3 +208,83 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Your frontend URL
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+
+
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'posts': {  # Your posts app
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'supabase': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'httpx': {  # Supabase uses httpx
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
+# Media files configuration (for local storage fallback)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Environment variables check
+def check_environment():
+    """Check if required environment variables are set"""
+    required_vars = ['SUPABASE_URL', 'SUPABASE_KEY']
+    missing_vars = []
+    
+    for var in required_vars:
+        if not os.getenv(var):
+            missing_vars.append(var)
+    
+    if missing_vars:
+        print(f"⚠️  WARNING: Missing environment variables: {', '.join(missing_vars)}")
+        print("   Image uploads will not work without these variables.")
+        print("   Posts will still be created but without images.")
+    else:
+        print("✅ Environment variables are set")
+        
+    # Test Supabase connection
+    supabase_url = os.getenv('SUPABASE_URL')
+    if supabase_url:
+        print(f"🔗 Supabase URL: {supabase_url}")
+
+# Call the check function
+check_environment()
