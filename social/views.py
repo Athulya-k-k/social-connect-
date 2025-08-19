@@ -67,25 +67,23 @@ class UserFollowingView(generics.ListAPIView):
 # ---------- LIKE SYSTEM ----------
 class LikePostView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
-
+    
     def post(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         if Like.objects.filter(user=request.user, post=post).exists():
-            return Response({"detail": "Already liked"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Already liked'}, status=status.HTTP_400_BAD_REQUEST)
         Like.objects.create(user=request.user, post=post)
-        return Response({"detail": "Post liked"})
+        return Response({'detail': 'Post liked'})
 
 
 class UnlikePostView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
-
+    
     def delete(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
-        like_instance = Like.objects.filter(user=request.user, post=post)
-        if not like_instance.exists():
-            return Response({"detail": "You haven't liked this post"}, status=status.HTTP_400_BAD_REQUEST)
-        like_instance.delete()
-        return Response({"detail": "Post unliked"})
+        like = get_object_or_404(Like, user=request.user, post=post)
+        like.delete()
+        return Response({'detail': 'Post unliked'})
 
 
 class LikeStatusView(generics.RetrieveAPIView):
@@ -101,7 +99,7 @@ class LikeStatusView(generics.RetrieveAPIView):
 class AddCommentView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CommentSerializer
-
+    
     def perform_create(self, serializer):
         post = get_object_or_404(Post, id=self.kwargs['post_id'])
         serializer.save(author=self.request.user, post=post)
@@ -125,38 +123,39 @@ class DeleteOwnCommentView(generics.DestroyAPIView):
 
 
 
+# social/views.py
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def feed(request):
     """
-    Returns the chronological feed of posts from followed users + own posts
+    Returns the chronological feed of posts from followed users
     """
     user = request.user
-
-    # 1. Get IDs of followed users
+    
+    # Get IDs of followed users
     following_ids = Follow.objects.filter(follower=user).values_list('following_id', flat=True)
-
-    # 2. Get posts from followed users + own posts
+    
+    # Get posts from followed users
     posts_qs = Post.objects.filter(
-        author_id__in=list(following_ids) + [user.id],
-        is_active=True  # Only active posts
+        author_id__in=list(following_ids),
+        is_active=True
     ).annotate(
         like_count_actual=Count('likes', distinct=True),
         comment_count_actual=Count('comments', distinct=True),
         is_liked=Exists(Like.objects.filter(post=OuterRef('pk'), user=user))
     ).order_by('-created_at')
-
-    # 3. Pagination - 20 posts per page
+    
+    # Pagination
     page_number = request.GET.get('page', 1)
     paginator = Paginator(posts_qs, 20)
     page_obj = paginator.get_page(page_number)
-
-    # 4. Serialize response
+    
+    # Serialize response
     feed_data = []
     for post in page_obj:
         feed_data.append({
             "id": post.id,
-            "content": post.content,  # Fixed: use content instead of title/description
+            "content": post.content,
             "image_url": post.image_url,
             "category": post.category,
             "created_at": post.created_at.isoformat(),

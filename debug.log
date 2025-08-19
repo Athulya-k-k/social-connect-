@@ -28,3 +28,33 @@ ERROR 2025-08-19 12:50:28,210 supabase_utils 33112 15508 SUPABASE_URL: https://x
 ERROR 2025-08-19 12:50:28,210 supabase_utils 33112 15508 SUPABASE_KEY: Set
 WARNING 2025-08-19 12:50:28,211 serializers 33112 15508 Supabase upload failed for post 9, trying local storage
 INFO 2025-08-19 12:50:28,217 serializers 33112 15508 Successfully uploaded image for post 9: /media/posts/post_9_f44f0ecab848434d8b4e57c576b41efb.png
+INFO 2025-08-19 13:08:55,049 serializers 20544 46144 Created post 10 by user athul
+INFO 2025-08-19 13:08:55,050 serializers 20544 46144 Processing image upload for post 10
+INFO 2025-08-19 13:08:55,050 supabase_utils 20544 46144 Attempting to upload image to Supabase: posts/6/post_10_2c7079b8436446e9bdb5a4a499302b79.png
+INFO 2025-08-19 13:08:56,745 supabase_utils 20544 46144 Uploading to bucket: avatars, path: posts/6/post_10_2c7079b8436446e9bdb5a4a499302b79.png
+ERROR 2025-08-19 13:08:57,511 supabase_utils 20544 46144 Failed to upload image to Supabase: [Errno 11001] getaddrinfo failed
+ERROR 2025-08-19 13:08:57,512 supabase_utils 20544 46144 Error type: ConnectError
+ERROR 2025-08-19 13:08:57,512 supabase_utils 20544 46144 SUPABASE_URL: https://xxxx.supabase.co
+ERROR 2025-08-19 13:08:57,514 supabase_utils 20544 46144 SUPABASE_KEY: Set
+WARNING 2025-08-19 13:08:57,514 serializers 20544 46144 Supabase upload failed for post 10, trying local storage
+INFO 2025-08-19 13:08:57,526 serializers 20544 46144 Successfully uploaded image for post 10: /media/posts/post_10_2c7079b8436446e9bdb5a4a499302b79.png
+INFO 2025-08-19 15:00:30,657 serializers 40628 34024 Created post 11 by user athulya
+INFO 2025-08-19 15:00:30,657 serializers 40628 34024 Processing image upload for post 11
+INFO 2025-08-19 15:00:30,657 supabase_utils 40628 34024 Attempting to upload image to Supabase: posts/5/post_11_65d428a3abeb4f30bdeaf5419041b03b.png
+INFO 2025-08-19 15:00:31,183 supabase_utils 40628 34024 Uploading to bucket: avatars, path: posts/5/post_11_65d428a3abeb4f30bdeaf5419041b03b.png
+ERROR 2025-08-19 15:00:31,483 supabase_utils 40628 34024 Failed to upload image to Supabase: [Errno 11001] getaddrinfo failed
+ERROR 2025-08-19 15:00:31,487 supabase_utils 40628 34024 Error type: ConnectError
+ERROR 2025-08-19 15:00:31,488 supabase_utils 40628 34024 SUPABASE_URL: https://xxxx.supabase.co
+ERROR 2025-08-19 15:00:31,488 supabase_utils 40628 34024 SUPABASE_KEY: Set
+WARNING 2025-08-19 15:00:31,488 serializers 40628 34024 Supabase upload failed for post 11, trying local storage
+INFO 2025-08-19 15:00:31,501 serializers 40628 34024 Successfully uploaded image for post 11: /media/posts/post_11_65d428a3abeb4f30bdeaf5419041b03b.png
+INFO 2025-08-19 15:12:56,484 serializers 11072 11600 Created post 12 by user athul
+INFO 2025-08-19 15:12:56,484 serializers 11072 11600 Processing image upload for post 12
+INFO 2025-08-19 15:12:56,484 supabase_utils 11072 11600 Attempting to upload image to Supabase: posts/6/post_12_99028455b64f497f84733baca8cfac46.png
+INFO 2025-08-19 15:12:57,962 supabase_utils 11072 11600 Uploading to bucket: avatars, path: posts/6/post_12_99028455b64f497f84733baca8cfac46.png
+ERROR 2025-08-19 15:12:58,811 supabase_utils 11072 11600 Failed to upload image to Supabase: [Errno 11001] getaddrinfo failed
+ERROR 2025-08-19 15:12:58,811 supabase_utils 11072 11600 Error type: ConnectError
+ERROR 2025-08-19 15:12:58,811 supabase_utils 11072 11600 SUPABASE_URL: https://xxxx.supabase.co
+ERROR 2025-08-19 15:12:58,811 supabase_utils 11072 11600 SUPABASE_KEY: Set
+WARNING 2025-08-19 15:12:58,811 serializers 11072 11600 Supabase upload failed for post 12, trying local storage
+INFO 2025-08-19 15:12:58,851 serializers 11072 11600 Successfully uploaded image for post 12: /media/posts/post_12_99028455b64f497f84733baca8cfac46.png

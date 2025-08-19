@@ -117,18 +117,28 @@ from django.utils import timezone
 import uuid
 import logging
 from .supabase_utils import upload_image_to_supabase, validate_image_file, save_image_locally
+from accounts.serializers import UserListSerializer
 
 logger = logging.getLogger(__name__)
 
-class PostListSerializer(serializers.ModelSerializer):
-    author_username = serializers.CharField(source='author.username', read_only=True)
 
+
+
+
+
+
+class PostListSerializer(serializers.ModelSerializer):
+    author = UserListSerializer(read_only=True)  # 👈 nested user
+    
     class Meta:
         model = Post
-        fields = ('id', 'content', 'author', 'author_username', 'image_url',
-                  'category', 'is_active', 'like_count', 'comment_count',
-                  'created_at', 'updated_at')
+        fields = (
+            'id', 'content', 'author', 'image_url',
+            'category', 'is_active', 'like_count', 'comment_count',
+            'created_at', 'updated_at'
+        )
         read_only_fields = ('author', 'like_count', 'comment_count', 'created_at', 'updated_at')
+
 
 class PostCreateSerializer(serializers.ModelSerializer):
     image_file = serializers.ImageField(write_only=True, required=False, allow_null=True)

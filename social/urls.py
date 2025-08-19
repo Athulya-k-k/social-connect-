@@ -9,14 +9,14 @@ urlpatterns = [
     path('users/<int:user_id>/following/', views.UserFollowingView.as_view()),
 
     # Likes
-    path('posts/<int:post_id>/like/', views.LikePostView.as_view()),
-    path('posts/<int:post_id>/unlike/', views.UnlikePostView.as_view()),
-    path('posts/<int:post_id>/like-status/', views.LikeStatusView.as_view()),
+    path('posts/<int:post_id>/like/', views.LikePostView.as_view(), name='like-post'),
+    path('posts/<int:post_id>/unlike/', views.UnlikePostView.as_view(), name='unlike-post'),
+    path('posts/<int:post_id>/like-status/', views.LikeStatusView.as_view(), name='like-status'),
 
     # Comments
-    path('posts/<int:post_id>/comments/', views.GetCommentsView.as_view()),
-    path('posts/<int:post_id>/comments/add/', views.AddCommentView.as_view()),
-    path('comments/<int:comment_id>/delete/', views.DeleteOwnCommentView.as_view()),
+      path('posts/<int:post_id>/comments/', views.GetCommentsView.as_view(), name='get-comments'),
+    path('posts/<int:post_id>/comments/add/', views.AddCommentView.as_view(), name='add-comment'),
+    path('comments/<int:comment_id>/delete/', views.DeleteOwnCommentView.as_view(), name='delete-comment'),
     
     # Feed - Fixed URL pattern
     path('feed/', views.feed, name='feed'),
